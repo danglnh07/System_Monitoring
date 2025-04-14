@@ -1,4 +1,4 @@
-module sys
+module system-monitoring
 
 go 1.23.7
 

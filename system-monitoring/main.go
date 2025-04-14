@@ -1,6 +1,6 @@
 package main
 
-import "sys/server"
+import "system-monitoring/server"
 
 func main() {
 	//Create server and start
