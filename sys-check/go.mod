@@ -1,11 +1,12 @@
-module sys
+module sys-check
 
-go 1.23.7
+go 1.23.0
+
+toolchain go1.23.8
 
 require (
-	github.com/gorilla/websocket v1.5.3
 	github.com/shirou/gopsutil v3.21.11+incompatible
-	golang.org/x/sys v0.31.0
+	golang.org/x/sys v0.32.0
 )
 
 require (

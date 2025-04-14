@@ -1,9 +1,7 @@
 package hardware
 
 import (
-	"bytes"
 	"fmt"
-	"html/template"
 
 	"github.com/shirou/gopsutil/net"
 	"github.com/shirou/gopsutil/process"
@@ -19,8 +17,8 @@ var SocketType map[uint32]string = map[uint32]string{
 }
 
 type Address struct {
-	IP   string
-	Port uint32
+	IP   string `json:"ip"`
+	Port uint32 `json:"port"`
 }
 
 func (add *Address) String() string {
@@ -28,12 +26,16 @@ func (add *Address) String() string {
 }
 
 type ConnectionInfo struct {
-	PID         int32   // Process PID that use the connection
-	ProcessName string  // The name of the process that used the connection
-	Type        uint32  // Socket type (SOCK_STREAM = TCP, SOCK_DGRAM = UDP)
-	LocalAddr   Address // Local address (IP and Port)
-	RemoteAddr  Address // Remote address (IP and Port)
-	Status      string  // Connection status (e.g., "ESTABLISHED", "LISTEN")
+	PID         int32   `json:"pid"`            // Process PID that use the connection
+	ProcessName string  `json:"process_name"`   // The name of the process that used the connection
+	Type        uint32  `json:"type"`           // Socket type (SOCK_STREAM = TCP, SOCK_DGRAM = UDP)
+	LocalAddr   Address `json:"local_address"`  // Local address (IP and Port)
+	RemoteAddr  Address `json:"remote_address"` // Remote address (IP and Port)
+	Status      string  `json:"status"`         // Connection status (e.g., "ESTABLISHED", "LISTEN")
+}
+
+func NewConnectionInfo() *ConnectionInfo {
+	return &ConnectionInfo{}
 }
 
 func (connInfo *ConnectionInfo) String() string {
@@ -46,7 +48,29 @@ func (connInfo *ConnectionInfo) String() string {
 		connInfo.Status)
 }
 
-type Connections []ConnectionInfo
+func (connInfo *ConnectionInfo) GetConnectionInfo(conn net.ConnectionStat) {
+	//Filtering network connection (No supported socket type)
+	if _, ok := SocketType[conn.Type]; ok {
+		//Get the process name that use the connection
+		proc, _ := process.NewProcess(conn.Pid)
+		var name string
+		name, err := proc.Name()
+		if err != nil {
+			name = "Idle Process" //In Linux, process with PID = 0 cannot get their name, so we assign a fallback value
+		}
+
+		connInfo.PID = conn.Pid
+		connInfo.ProcessName = name
+		connInfo.Type = conn.Type
+		connInfo.LocalAddr = Address{IP: conn.Laddr.IP, Port: conn.Laddr.Port}
+		connInfo.RemoteAddr = Address{IP: conn.Raddr.IP, Port: conn.Raddr.Port}
+		connInfo.Status = conn.Status
+	}
+}
+
+type Connections struct {
+	Connections []ConnectionInfo `json:"connections"`
+}
 
 func NewConnections() *Connections {
 	return &Connections{}
@@ -54,38 +78,15 @@ func NewConnections() *Connections {
 
 func (connections Connections) String() string {
 	str := "\t\t---Connections information---\n"
-	for _, connInfo := range connections {
+	for _, connInfo := range connections.Connections {
 		str += fmt.Sprintf("%s\n---\n", connInfo.String())
 	}
 	return str
 }
 
-func (connections *Connections) ToHtml(tmplPath string) (string, error) {
-	//Func map
-	funcMap := template.FuncMap{
-		"DisplayAddress": func(add Address) string {
-			return add.String()
-		},
-	}
-
-	//Get the template
-	tmpl, err := template.New("netTmpl.html").Funcs(funcMap).ParseFiles(tmplPath)
-	if err != nil {
-		return "", err
-	}
-
-	//Execute template
-	var buffer bytes.Buffer
-	err = tmpl.Execute(&buffer, connections)
-	if err != nil {
-		return "", err
-	}
-	return buffer.String(), nil
-}
-
 func (connections *Connections) GetAllConnection() error {
 	//Clean the connections first
-	*connections = (*connections)[:0]
+	connections.Connections = make([]ConnectionInfo, 0)
 
 	/*
 	 * The 'kind' parameter filters network connections by protocol
@@ -107,26 +108,9 @@ func (connections *Connections) GetAllConnection() error {
 	}
 
 	for _, conn := range conns {
-		//Filtering network connection (No supported socket type)
-		if _, ok := SocketType[conn.Type]; ok {
-			//Get the process name that use the connection
-			proc, _ := process.NewProcess(conn.Pid)
-			var name string
-			name, err = proc.Name()
-			if err != nil {
-				name = "Idle Process" //In Linux, process with PID = 0 cannot get their name, so we assign a fallback value
-			}
-
-			connInfo := ConnectionInfo{
-				PID:         conn.Pid,
-				ProcessName: name,
-				Type:        conn.Type,
-				LocalAddr:   Address{IP: conn.Laddr.IP, Port: conn.Laddr.Port},
-				RemoteAddr:  Address{IP: conn.Raddr.IP, Port: conn.Raddr.Port},
-				Status:      conn.Status,
-			}
-			*connections = append(*connections, connInfo)
-		}
+		connInfo := NewConnectionInfo()
+		connInfo.GetConnectionInfo(conn)
+		connections.Connections = append(connections.Connections, *connInfo)
 	}
 
 	return nil

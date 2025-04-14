@@ -1,20 +1,18 @@
 package hardware
 
 import (
-	"bytes"
 	"fmt"
-	"html/template"
 	"sort"
 
 	"github.com/shirou/gopsutil/process"
 )
 
 type ProcessInfo struct {
-	PID                int32   //Process ID
-	Name               string  //Process name
-	NumberOfThreadUsed int32   //Number of threads that process currently used
-	CpuUsagePercent    float64 //The CPU usage of that process
-	MemoryUsed         uint64  //The amount of memory the current process is holding in RAM (not including swap)
+	PID                int32   `json:"pid"`          //Process ID
+	Name               string  `json:"process_name"` //Process name
+	NumberOfThreadUsed int32   `json:"threads_used"` //Number of threads that process currently used
+	CpuUsagePercent    float64 `json:"cpu_usage"`    //The CPU usage of that process
+	MemoryUsed         uint64  `json:"memory_used"`  //The amount of memory the current process is holding in RAM (not including swap)
 }
 
 func NewProcessInfo() *ProcessInfo {
@@ -71,7 +69,9 @@ func (procInfo *ProcessInfo) GetProcessInfo(runningProc *process.Process) error 
 	return err
 }
 
-type Processes []ProcessInfo
+type Processes struct {
+	Processes []ProcessInfo `json:"processes"`
+}
 
 func NewProcesses() *Processes {
 	return &Processes{}
@@ -79,14 +79,14 @@ func NewProcesses() *Processes {
 
 func (processes *Processes) String() string {
 	str := "\t\t---Process Infomation---\n"
-	for _, processInfo := range *processes {
+	for _, processInfo := range processes.Processes {
 		str += fmt.Sprintf("%s\n---\n", processInfo.String())
 	}
 	return str
 }
 
 func (processes Processes) Len() int {
-	return len(processes)
+	return len(processes.Processes)
 }
 
 func (processes Processes) Less(i, j int) bool {
@@ -95,7 +95,7 @@ func (processes Processes) Less(i, j int) bool {
 	 * Evaluation: 20% * Threads used + 40% * CPU Usage + 40% * Memory Usage
 	 * The sort is descending
 	 */
-	proc1, proc2 := processes[i], processes[j]
+	proc1, proc2 := processes.Processes[i], processes.Processes[j]
 	stat1 := float64(proc1.NumberOfThreadUsed)*0.2 + proc1.CpuUsagePercent*0.4 + float64(proc1.MemoryUsed)*0.4
 	stat2 := float64(proc2.NumberOfThreadUsed)*0.2 + proc2.CpuUsagePercent*0.4 + float64(proc2.MemoryUsed)*0.4
 
@@ -103,33 +103,12 @@ func (processes Processes) Less(i, j int) bool {
 }
 
 func (processes Processes) Swap(i, j int) {
-	processes[i], processes[j] = processes[j], processes[i]
-}
-
-func (processes *Processes) ToHtml(tmplPath string) (string, error) {
-	//Func map
-	funcMap := template.FuncMap{
-		"ConvertByte": ConvertByte,
-	}
-
-	//Get the template
-	tmpl, err := template.New("processTmpl.html").Funcs(funcMap).ParseFiles(tmplPath)
-	if err != nil {
-		return "", err
-	}
-
-	//Execute template
-	var buffer bytes.Buffer
-	err = tmpl.Execute(&buffer, processes)
-	if err != nil {
-		return "", err
-	}
-	return buffer.String(), nil
+	processes.Processes[i], processes.Processes[j] = processes.Processes[j], processes.Processes[i]
 }
 
 func (processes *Processes) GetAllProcessInfo() error {
 	//Clean the processes to avoid duplicate
-	*processes = (*processes)[:0]
+	processes.Processes = make([]ProcessInfo, 0)
 
 	//Get all running processes
 	runningProcesses, err := process.Processes()
@@ -147,7 +126,7 @@ func (processes *Processes) GetAllProcessInfo() error {
 			if err != nil {
 				continue
 			}
-			*processes = append(*processes, *procInfo)
+			processes.Processes = append(processes.Processes, *procInfo)
 		}
 	}
 

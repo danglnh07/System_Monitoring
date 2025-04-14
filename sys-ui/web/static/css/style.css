@@ -1,0 +1,56 @@
+body {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    color: #ffffff;
+    font-family: 'Segoe UI', sans-serif;
+    min-height: 100vh;
+}
+
+.card {
+    background: rgba(255, 255, 255, 0.05);
+    border: none;
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+    transition: transform 0.3s;
+    color: #ffffff;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+.card h3,
+.card p {
+    color: #ffffff;
+}
+
+.stat-circle {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: conic-gradient(#0d6efd var(--percentage), #ffffff20 0);
+    margin: 0 auto;
+}
+
+.table-container {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.progress {
+    height: 10px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.cpu-load-bar {
+    height: 20px;
+    margin: 5px 0;
+}
+
+.badge-status {
+    padding: 5px 10px;
+    border-radius: 20px;
+}

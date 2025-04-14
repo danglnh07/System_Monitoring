@@ -1,9 +1,7 @@
 package hardware
 
 import (
-	"bytes"
 	"fmt"
-	"html/template"
 	"time"
 
 	"github.com/shirou/gopsutil/cpu"
@@ -11,15 +9,15 @@ import (
 )
 
 type CpuInfo struct {
-	Model         string    //Model name of the CPU
-	Family        string    //Model family of the CPU
-	MHz           float64   //CPU running frequency
-	CacheSize     uint64    //Cache size
-	TotalUsage    float64   //Total CPU usage
-	UsagePerCores []float64 //Each core usage
-	Load1         float64   //Average load (short-term load)
-	Load5         float64   //Average load (mid-term load)
-	Load15        float64   //Average load (long-term load)
+	Model         string    `json:"model"`           //Model name of the CPU
+	Family        string    `json:"family"`          //Model family of the CPU
+	MHz           float64   `json:"mhz"`             //CPU running frequency
+	CacheSize     uint64    `json:"cache_size"`      //Cache size
+	TotalUsage    float64   `json:"total_cpu_usage"` //Total CPU usage
+	UsagePerCores []float64 `json:"usage_per_core"`  //Each core usage
+	Load1         float64   `json:"load1"`           //Average load (short-term load)
+	Load5         float64   `json:"load5"`           //Average load (mid-term load)
+	Load15        float64   `json:"load15"`          //Average load (long-term load)
 }
 
 func NewCpuInfo() *CpuInfo {
@@ -40,27 +38,6 @@ func (cpuInfo *CpuInfo) String() string {
 	}
 	str += fmt.Sprintf("Load Avg: %.2f %.2f %.2f\n", cpuInfo.Load1, cpuInfo.Load5, cpuInfo.Load15)
 	return str
-}
-
-func (cpuInfo *CpuInfo) ToHtml(tmplPath string) (string, error) {
-	//Func map
-	funcMap := template.FuncMap{
-		"ConvertByte": ConvertByte,
-	}
-
-	//Get the template
-	tmpl, err := template.New("cpuTmpl.html").Funcs(funcMap).ParseFiles(tmplPath)
-	if err != nil {
-		return "", err
-	}
-
-	//Execute template
-	var buffer bytes.Buffer
-	err = tmpl.Execute(&buffer, cpuInfo)
-	if err != nil {
-		return "", err
-	}
-	return buffer.String(), nil
 }
 
 func (cpuInfo *CpuInfo) GetCPUInfo(interval time.Duration) error {

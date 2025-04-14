@@ -1,9 +1,7 @@
 package hardware
 
 import (
-	"bytes"
 	"fmt"
-	"html/template"
 
 	"github.com/shirou/gopsutil/host"
 	"github.com/shirou/gopsutil/mem"
@@ -11,13 +9,13 @@ import (
 
 // System information
 type SystemInfo struct {
-	Hostname        string //Device hostname
-	TotalVM         uint64 //Total RAM
-	UsedVM          uint64 //Currently used RAM
-	RuntimeOS       string //Current OS (ex: linux, windows,...)
-	Platform        string //Current platform (ex: ubuntu, linuxmint,..)
-	PlatformFamily  string //Current family (ex: debian, rhel,...)
-	PlatformVersion string //Current version (ex: ubuntu 24.04,...)
+	Hostname        string `json:"hostname"`  //Device hostname
+	TotalVM         uint64 `json:"ram"`       //Total RAM
+	UsedVM          uint64 `json:"ram_usage"` //Currently used RAM
+	RuntimeOS       string `json:"os"`        //Current OS (ex: linux, windows,...)
+	Platform        string `json:"platform"`  //Current platform (ex: ubuntu, linuxmint,..)
+	PlatformFamily  string `json:"family"`    //Current family (ex: debian, rhel,...)
+	PlatformVersion string `json:"version"`   //Current version (ex: ubuntu 24.04,...)
 }
 
 // Factory method: return a pointer to a new SystemInfo struct
@@ -37,28 +35,6 @@ func (sysInfo *SystemInfo) String() string {
 	str += fmt.Sprintf("Platform version: %s", sysInfo.PlatformVersion)
 
 	return str
-}
-
-// Return the HTML representation of systemInfo
-func (sysInfo *SystemInfo) ToHtml(tmplPath string) (string, error) {
-	//Func map
-	funcMap := template.FuncMap{
-		"ConvertByte": ConvertByte,
-	}
-
-	//Get the template
-	tmpl, err := template.New("systemTmpl.html").Funcs(funcMap).ParseFiles(tmplPath)
-	if err != nil {
-		return "", err
-	}
-
-	//Execute template
-	var buffer bytes.Buffer
-	err = tmpl.Execute(&buffer, sysInfo)
-	if err != nil {
-		return "", err
-	}
-	return buffer.String(), nil
 }
 
 // Get the current system information
