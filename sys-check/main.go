@@ -55,6 +55,17 @@ func main() {
 			fallthrough
 		case "system-stat":
 			fmt.Println(hw.SysInfo)
+		case "help":
+			fmt.Println("Argument list:")
+			fmt.Println("  cpu-stat: Show CPU statistics")
+			fmt.Println("  disk-stat: Show disk statistics")
+			fmt.Println("  net-stat: Show network statistics")
+			fmt.Println("  proc-stat: Show process statistics")
+			fmt.Println("  process-stat: Show process statistics (alias for proc-stat)")
+			fmt.Println("  sys-stat: Show system statistics")
+			fmt.Println("  system-stat: Show system statistics (alias for sys-stat)")
+			fmt.Println("  help: Show this help message")
+			fmt.Println("  (no argument): Send data to the server every second")
 		}
 
 		return
